@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router';
+import { supabase } from '../../lib/supabase';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Textarea } from '../components/ui/textarea';
@@ -56,14 +57,43 @@ export default function Onboarding() {
     setData((prev) => ({ ...prev, ...updates }));
   };
 
-  const handleNext = () => {
+  const handleNext = async () => {
     if (step === 0 && !data.track) return;
-    
+
     setDirection(1);
     if (step < 2) {
       setStep(step + 1);
     } else {
       setIsTransitioning(true);
+
+      // Save profile to Supabase
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        await supabase.from('profiles').update({
+          track: data.track,
+          name: data.name ?? null,
+          location: data.location ?? null,
+          bio: data.bio ?? null,
+          one_liner: data.oneLiner ?? null,
+          linkedin_url: data.linkedInUrl ?? null,
+          github_url: data.githubUrl ?? null,
+          calendly_url: data.calendlyUrl ?? null,
+          startup_idea: data.startupIdea ?? null,
+          skills_needed: data.skillsNeeded ?? [],
+          vertical: data.vertical ?? null,
+          remote_willing: data.remoteWilling ?? false,
+          working_style: data.workingStyle ?? [],
+          skills: data.skills ?? [],
+          role: data.role ?? null,
+          experience: data.experience ?? null,
+          startup_preferences: data.startupPreferences ?? [],
+          work_schedule: data.workSchedule ?? null,
+          risk_tolerance: data.riskTolerance ?? null,
+          onboarding_complete: true,
+          updated_at: new Date().toISOString(),
+        }).eq('id', user.id);
+      }
+
       setTimeout(() => navigate('/discover'), 2600);
     }
   };
